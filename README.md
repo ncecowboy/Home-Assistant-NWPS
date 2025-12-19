@@ -1,3 +1,4 @@
+```markdown
 # NWPS Water - Home Assistant custom integration
 
 Fetch selected water data from NOAA NWPS (National Water Prediction Service) and expose them in Home Assistant.
@@ -95,3 +96,4 @@ Changelog (high level)
 Support / Contact
 - Code owner: @ncecowboy
 - For issues and PRs, please use the GitHub repository's Issues tab.
+```
