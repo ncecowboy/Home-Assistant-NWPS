@@ -1,10 +1,13 @@
 {
   "domain": "nwps_water",
   "name": "NWPS Water",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "documentation": "https://api.water.noaa.gov/nwps/v1/docs/",
   "requirements": [],
   "dependencies": [],
-  "codeowners": [],
+  "codeowners": [
+    "@ncecowboy"
+  ],
+  "config_flow": true,
   "iot_class": "cloud_polling"
 }
