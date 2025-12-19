@@ -1,12 +1,14 @@
 {
-  "domain": "nwps_water",
-  "name": "NWPS Water",
+  "domain":  "nwps_water",
+  "name": "National Water Prediction Service",
   "codeowners": ["@ncecowboy"],
-  "config_flow": true,
+  "config_flow":  true,
   "documentation": "https://github.com/ncecowboy/Home-Assistant-NWPS",
   "integration_type": "service",
   "iot_class": "cloud_poll",
   "issue_tracker": "https://github.com/ncecowboy/Home-Assistant-NWPS/issues",
   "requirements": [],
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "brand_url": "https://www.weather.gov/",
+  "logo": "https://www.weather.gov/images/logos/NOAA_shield.png"
 }
