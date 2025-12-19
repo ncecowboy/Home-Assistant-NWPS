@@ -9,5 +9,6 @@
   "issue_tracker": "https://github.com/ncecowboy/Home-Assistant-NWPS/issues",
   "requirements": [],
   "version": "1.0.0",
-  "brand_url": "https://water.noaa.gov/"
+  "brand_url": "https://water.noaa.gov/",
+  "logo": "https://brands.home-assistant.io/gfs_weather_forecast/icon.png"
 }
