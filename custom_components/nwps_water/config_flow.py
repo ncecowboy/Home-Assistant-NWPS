@@ -42,10 +42,6 @@ class NWPSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         schema = vol.Schema(
             {
                 vol.Required(CONF_STATION): str,
-                vol.Optional(
-                    CONF_PARAMETERS, 
-                    default=list(AVAILABLE_PARAMETERS.keys())
-                ): cv.multi_select(AVAILABLE_PARAMETERS), # <--- Correct helper
                 vol.Optional("scan_interval", default=DEFAULT_SCAN_INTERVAL): int,
             }
         )
