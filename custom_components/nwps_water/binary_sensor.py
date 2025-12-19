@@ -2,58 +2,61 @@
 from __future__ import annotations
 
 import logging
-
-from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import BINARY_SENSORS, CONF_STATION, DEFAULT_SCAN_INTERVAL
-from .coordinator import NWPSDataCoordinator
+from .const import DOMAIN, BINARY_SENSORS, CONF_STATION
 
 _LOGGER = logging.getLogger(__name__)
 
-
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities) -> None:
     """Set up binary sensors for a config entry."""
+    # RECOVERY: Get the coordinator created in __init__.py
+    coordinator = hass.data[DOMAIN][entry.entry_id]
     station_id = entry.data.get(CONF_STATION)
-    update_interval = entry.options.get("scan_interval", DEFAULT_SCAN_INTERVAL)
-
-    # Coordinator fetches station JSON (sensors use the parsed data)
-    parameters = entry.options.get("parameters", [])
-    coordinator = NWPSDataCoordinator(hass, station_id, parameters, update_interval)
-    await coordinator.async_config_entry_first_refresh()
-
-    hass.data.setdefault("nwps_water", {})
-    hass.data["nwps_water"][entry.entry_id] = coordinator
 
     entities = []
     for key, name in BINARY_SENSORS.items():
-        entities.append(NWPSBinarySensor(coordinator, entry.entry_id, station_id, key, name))
+        entities.append(NWPSBinarySensor(coordinator, station_id, key, name))
+    
     async_add_entities(entities)
 
 
 class NWPSBinarySensor(CoordinatorEntity, BinarySensorEntity):
     """Binary sensor for NWPS flood condition."""
 
-    def __init__(self, coordinator: NWPSDataCoordinator, entry_id: str, station_id: str, key: str, name: str):
+    _attr_has_entity_name = True
+    # 'problem' makes the sensor turn Red in the UI when 'on'
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM 
+
+    def __init__(self, coordinator: NWPSDataCoordinator, station_id: str, key: str, name: str):
         super().__init__(coordinator)
-        self.coordinator = coordinator
-        self._entry_id = entry_id
         self._station_id = station_id
         self._key = key
-        self._attr_name = f"{name} ({station_id})"
+        self._attr_name = name
         self._attr_unique_id = f"nwps_{station_id}_{key}"
+        
+        # Link to the same device as the regular sensors
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, station_id)},
+            name=f"NWPS {station_id}",
+            manufacturer="NOAA NWPS",
+        )
 
     def _category_active(self, category: str | None) -> bool:
-        """Return True if category indicates any flooding (minor or greater)."""
+        """Return True if category indicates any flooding."""
         if not category:
             return False
         cat = str(category).lower()
-        return cat in ("minor", "moderate", "major") or cat == "action"
+        # 'action' is a pre-flood stage, 'minor/moderate/major' are active floods
+        return cat in ("minor", "moderate", "major", "action")
 
     @property
     def is_on(self) -> bool:
+        """Return true if the binary sensor is on."""
         data = self.coordinator.data or {}
         if self._key == "observed_flood":
             return self._category_active(data.get("observed_flood_category"))
@@ -63,11 +66,10 @@ class NWPSBinarySensor(CoordinatorEntity, BinarySensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict:
+        """Return details about the flood state."""
+        data = self.coordinator.data or {}
         return {
             "station_id": self._station_id,
-            "observed_flood_category": self.coordinator.data.get("observed_flood_category"),
-            "forecast_flood_category": self.coordinator.data.get("forecast_flood_category"),
-            "flood_thresholds": self.coordinator.data.get("flood_thresholds"),
-            "raw": self.coordinator.data.get("_raw"),
-            "attribution": self.coordinator.data.get("_device", {}).get("dataAttribution"),
+            "flood_category": data.get(f"{self._key}_category"),
+            "flood_thresholds": data.get("flood_thresholds"),
         }

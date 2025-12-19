@@ -6,6 +6,7 @@ import logging
 from datetime import timedelta
 from typing import Any, Dict, Optional
 
+from homeassistant.config_entries import ConfigEntry # <--- Add this line
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -33,14 +34,25 @@ def _k_prefix_to_multiplier(unit: Optional[str]) -> float:
     return 1.0
 
 
+# Inside coordinator.py
+
 class NWPSDataCoordinator(DataUpdateCoordinator):
     """Fetch data from NWPS API and expose parsed results."""
 
-    def __init__(self, hass: HomeAssistant, station_id: str, parameters: list[str], update_interval: int):
+    def __init__(self, hass: HomeAssistant, station_id: str, entry: ConfigEntry):
         """Initialize coordinator."""
         self.hass = hass
         self.station_id = station_id
-        self.parameters = parameters
+        
+        # Pull parameters and interval directly from the entry options
+        from .const import CONF_PARAMETERS, DEFAULT_SCAN_INTERVAL, AVAILABLE_PARAMETERS
+        
+        self.parameters = entry.options.get(
+            CONF_PARAMETERS, 
+            list(AVAILABLE_PARAMETERS.keys())
+        )
+        update_interval = entry.options.get("scan_interval", DEFAULT_SCAN_INTERVAL)
+
         self.session = async_get_clientsession(hass)
 
         super().__init__(
@@ -50,13 +62,12 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
             update_interval=timedelta(seconds=update_interval),
         )
 
-        # store last raw response
         self.raw: Dict[str, Any] = {}
 
     async def _async_update_data(self) -> dict:
         """Fetch and parse NWPS station JSON into a normalized dict."""
         try:
-            url = f"{NWPS_BASE}/stations/{self.station_id}"
+            url = f"{NWPS_BASE}/{self.station_id}"
             _LOGGER.debug("Fetching NWPS station URL: %s", url)
             try:
                 async with self.session.get(url, timeout=30) as resp:

@@ -29,4 +29,4 @@ BINARY_SENSORS = {
 }
 
 # NWPS API base
-NWPS_BASE = "https://api.water.noaa.gov/nwps/v1"
+NWPS_BASE = "https://api.water.noaa.gov/nwps/v1/gauges"

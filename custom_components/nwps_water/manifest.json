@@ -1,13 +1,12 @@
 {
   "domain": "nwps_water",
   "name": "NWPS Water",
-  "version": "0.4.0",
-  "documentation": "https://api.water.noaa.gov/nwps/v1/docs/",
-  "requirements": [],
-  "dependencies": [],
-  "codeowners": [
-    "@ncecowboy"
-  ],
+  "codeowners": ["@ncecowboy"],
   "config_flow": true,
-  "iot_class": "cloud_polling"
+  "documentation": "https://github.com/ncecowboy/Home-Assistant-NWPS",
+  "integration_type": "service",
+  "iot_class": "cloud_poll",
+  "issue_tracker": "https://github.com/ncecowboy/Home-Assistant-NWPS/issues",
+  "requirements": [],
+  "version": "1.0.0"
 }
