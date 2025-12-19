@@ -1,5 +1,6 @@
 """Sensors for NWPS Water integration."""
 from __future__ import annotations
+from .coordinator import NWPSDataCoordinator
 
 import logging
 from typing import Any

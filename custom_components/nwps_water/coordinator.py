@@ -130,18 +130,18 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
             parsed["forecast_flood_category"] = forecast.get("floodCategory") or station_json.get("ForecastFloodCategory")
             parsed["flood_thresholds"] = station_json.get("flood", {}).get("categories", {})
 
-#            # Images (hydrograph, floodcat, probabilistic, short range)
-#            images = station_json.get("images", {}) or {}
-#            hydrograph = images.get("hydrograph", {}) or {}
-#            parsed["hydrograph_image"] = hydrograph.get("default") or hydrograph.get("floodcat")
-#            parsed["floodcat_image"] = hydrograph.get("floodcat")
-#            # probabilistic images
-#            prob = images.get("probability", {}) or {}
-#            weekint = prob.get("weekint", {}) or {}
-#            parsed["probability_stage_week"] = weekint.get("stage")
-#            parsed["probability_flow_week"] = weekint.get("flow")
-#            parsed["short_range_probability_image"] = images.get("probability", {}).get("shortrange") or images.get("probability", {}).get("shortrange")
-#
+            # Images (hydrograph, floodcat, probabilistic, short range)
+            images = station_json.get("images", {}) or {}
+            hydrograph = images.get("hydrograph", {}) or {}
+            parsed["hydrograph_image"] = hydrograph.get("default") or hydrograph.get("floodcat")
+            parsed["floodcat_image"] = hydrograph.get("floodcat")
+            # probabilistic images
+            prob = images.get("probability", {}) or {}
+            weekint = prob.get("weekint", {}) or {}
+            parsed["probability_stage_week"] = weekint.get("stage")
+            parsed["probability_flow_week"] = weekint.get("flow")
+            parsed["short_range_probability_image"] = images.get("probability", {}).get("shortrange") or images.get("probability", {}).get("shortrange")
+
 #            # Photos - provide first photo url if available
 #            photos = images.get("photos") or station_json.get("images", {}).get("photos") or []
 #            if isinstance(photos, list) and photos:
