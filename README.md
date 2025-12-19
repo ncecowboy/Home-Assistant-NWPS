@@ -1,99 +1,136 @@
-```markdown
-# NWPS Water - Home Assistant custom integration
+# National Water Prediction Service - Home Assistant Integration
 
-Fetch selected water data from NOAA NWPS (National Water Prediction Service) and expose them in Home Assistant.
+Fetch water monitoring data from NOAA NWPS (National Water Prediction Service) and expose real-time water stage, flow, and flood information in Home Assistant.
 
-Status
-- Current version: 0.4.0
-- Integration type: Custom component (Integration)
-- Default polling interval: 300 seconds (5 minutes)
-- Code owner: @ncecowboy
+## Features
 
-Quick links
-- NWPS API docs: https://api.water.noaa.gov/nwps/v1/docs/
-- Example station used for development: COCO3 (Clackamas River near Oregon City)
-- NOAA logo (optional): https://www.weather.gov/images/logos/NOAA_shield.png
+- **Real-time Water Data**: Stage, flow, and forecast data from NOAA NWPS
+- **Configurable Sensors**: Choose which parameters to monitor (Stage, Flow, Forecast Stage/Flow, etc.)
+- **Flood Alerts**: Binary sensors for observed and forecast flood conditions
+- **Hydrograph Images**:  Visualize water data trends with included hydrograph images
+- **Multi-station Support**: Monitor multiple water stations simultaneously
+- **Device Info**: Includes station coordinates and metadata for map integration
 
-Features
-- Sensors for observed stage, observed flow (normalized to cfs where possible), forecast stage/flow.
-- Binary sensors for observed and forecast flood conditions when category is minor/moderate/major.
-- Images: hydrograph, probabilistic/exceedance maps, station photos exposed in entity attributes.
-- Device info and coordinates exposed in attributes (so you can add the station to maps).
-- Raw JSON stored in entity attributes for inspection and debugging.
+## Installation
 
-Installation (local development)
-1. Copy `custom_components/nwps_water` into Home Assistant's `config/custom_components/`.
-2. Restart Home Assistant.
-3. Settings → Devices & Services → Add Integration → search for "NWPS Water".
-4. Enter `station_id` (e.g., COCO3) and choose parameters and scan interval.
+### Via HACS (Recommended)
 
-Installation via HACS (custom repository)
-1. Push this repository to GitHub.
-2. In Home Assistant → HACS → Integrations → ••• → Custom repositories.
-3. Add your GitHub repository URL and select category "Integration".
-4. Install via HACS and restart Home Assistant.
+1. Open HACS in Home Assistant
+2. Click the three dots (⋮) → **Custom repositories**
+3. Add this URL: `https://github.com/ncecowboy/Home-Assistant-NWPS`
+4. Select **Integration** as the category
+5. Click **Create**
+6. Find "National Water Prediction Service" in HACS and click **Install**
+7. Restart Home Assistant
+8. Go to **Settings** → **Devices & Services** → **Create Integration**
+9. Search for and select **National Water Prediction Service**
+10. Enter your NOAA NWPS station ID (e.g., `COCO3`)
 
-Configuration options
-- station_id (required): NWPS station identifier, e.g., COCO3.
-- parameters (optional): list of parameter keys to expose. Defaults are defined in `const.py`.
-- scan_interval (optional): polling interval in seconds (default 300).
+### Manual Installation
 
-Entities created (examples)
-- sensor.nwps_<station>_stage — observed stage (ft)
-- sensor.nwps_<station>_flow — observed flow (cfs)
-- sensor.nwps_<station>_forecast_stage — forecast stage (ft)
-- sensor.nwps_<station>_forecast_flow — forecast flow (cfs)
-- binary_sensor.nwps_<station>_observed_flood — active if observed flood category >= minor
-- binary_sensor.nwps_<station>_forecast_flood — active if forecast flood category >= minor
+1. Download or clone this repository
+2. Copy the `custom_components/nwps_water` folder to your Home Assistant `custom_components` directory:
+   ```bash
+   git clone https://github.com/ncecowboy/Home-Assistant-NWPS.git
+   cp -r Home-Assistant-NWPS/custom_components/nwps_water ~/. homeassistant/custom_components/
+   ```
+3. Restart Home Assistant
+4. Go to **Settings** → **Devices & Services** → **Create Integration**
+5. Search for and select **National Water Prediction Service**
+6. Enter your NOAA NWPS station ID
 
-Attributes available
-- raw: the raw JSON from the NWPS station endpoint (useful for extending parsers)
-- flood_thresholds: flood category thresholds (action/minor/moderate/major)
-- hydrograph_image / floodcat_image / probability image URLs
-- dataAttribution: original data attribution block (USGS, etc.)
-- latitude / longitude (if available)
+## Configuration
 
-Versioning & releases
-- Use semantic versioning (MAJOR.MINOR.PATCH).
-- Bump the `version` in `custom_components/nwps_water/manifest.json` for each release.
-- Create a Git tag matching the version (e.g., v0.4.0) and create a GitHub Release summarizing changes:
-  git tag -a v0.4.0 -m "v0.4.0: Add config_flow and packaging improvements"
-  git push origin v0.4.0
-- Add a short changelog entry in the Release notes.
+After installation, the integration will create sensors based on your selected parameters: 
 
-HACS publishing notes
-- For personal use, add the repository as a custom repository in HACS (no extra metadata required).
-- For public listing in HACS default store, follow HACS contribution guidelines and submit a PR to the HACS/default repository (requires additional metadata and review).
-- Consider adding a `hacs.json` file if you want HACS to show additional metadata in the UI.
+### Available Sensors
 
-Testing & debugging
-- Enable debug logging for development:
-  logger:
-    default: info
-    logs:
-      custom_components.nwps_water: debug
-- Use Developer Tools → Services to restart or test updates.
-- Inspect entity attributes → raw to see the exact NWPS JSON returned for your station; this helps fine-tune parsing.
+- **Stage** (feet) - Current water stage/level
+- **Flow** (cfs) - Current water flow (cubic feet per second)
+- **Forecast Stage** (feet) - Predicted water stage
+- **Forecast Flow** (cfs) - Predicted water flow
+- **Observed Flood Category** - Current flood status (None/Action/Minor/Moderate/Major)
+- **Forecast Flood Category** - Predicted flood status
+- **Hydrograph Image** - Chart showing stage/flow trends
+- **Flood Category Image** - Visual flood level indicators
+- **Probabilistic Images** - Exceedance probability maps
 
-CI / Quality suggestions
-- Add a GitHub Actions workflow for linting (flake8) and optional unit tests.
-- Create a tests/ folder and write unit tests for coordinator parsing using saved sample JSON (e.g., COCO3.json).
+### Binary Sensors
 
-Contributing
-- Open issues for bugs/features.
-- Pull requests should include unit tests where applicable.
-- Follow the repository code style and include type hints where convenient.
+- **Observed Flood Active** - True if current flood category >= Minor
+- **Forecast Flood Expected** - True if predicted flood category >= Minor
 
-License
-- Add a LICENSE file to indicate the license (e.g., MIT). The integration currently has no license file—add one before publishing if you want permissive reuse.
+## Finding Your Station ID
 
-Changelog (high level)
-- 0.1.0 — Initial scaffold
-- 0.2.0 — Basic coordinator & sensor prototypes
-- 0.3.0 — Heuristic parsing and optional binary sensors
-- 0.4.0 — UI config_flow enabled, README and packaging improvements, codeowner added
+1. Visit [NOAA NWPS API Documentation](https://api.water.noaa.gov/nwps/v1/docs/)
+2. Use the `/gauges` endpoint to browse available stations
+3. Look for your location and note the station ID (e.g., `COCO3`, `SACR1`)
+4. Example station: `COCO3` (Clackamas River near Oregon City, Oregon)
 
-Support / Contact
-- Code owner: @ncecowboy
-- For issues and PRs, please use the GitHub repository's Issues tab.
+## Example Automations
+
+### Flood Alert Automation
+
+```yaml
+automation:
+  - alias: "Flood Warning Alert"
+    trigger:
+      platform: state
+      entity_id:  binary_sensor.nwps_coco3_forecast_flood
+      to: "on"
+    action:
+      - service: notify.notify
+        data:
+          message: "Flood expected at COCO3 station!"
+          title: "NWPS Alert"
 ```
+
+### Display Hydrograph in Lovelace
+
+```yaml
+type: picture
+image_entity: sensor.nwps_coco3_hydrograph_image
+title: COCO3 Hydrograph
+```
+
+## Troubleshooting
+
+### Sensors showing "unavailable"
+
+- Check that your station ID is correct
+- Verify the station is active on the [NWPS API](https://api.water.noaa.gov/nwps/v1/docs/)
+- Check Home Assistant logs for API errors
+
+### Missing sensor values
+
+- Some stations may not provide all data types
+- The integration filters out sentinel values (-999) that indicate missing data
+- Check your parameter selection in the integration options
+
+### Update scan interval
+
+By default, the integration polls every 300 seconds (5 minutes). You can adjust this in the integration options. 
+
+## Data Attribution
+
+All data is provided by NOAA (National Oceanic and Atmospheric Administration) through the National Water Prediction Service API. 
+
+Learn more: [NOAA Water Data](https://www.weather.gov/)
+
+## Support
+
+- **Documentation**: [NWPS API Docs](https://api.water.noaa.gov/nwps/v1/docs/)
+- **Issues**: [GitHub Issues](https://github.com/ncecowboy/Home-Assistant-NWPS/issues)
+- **Repository**: [GitHub](https://github.com/ncecowboy/Home-Assistant-NWPS)
+
+## License
+
+This integration is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Version History
+
+- **1.0.0** - Initial release with full NWPS integration support
