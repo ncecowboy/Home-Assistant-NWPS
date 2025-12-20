@@ -167,6 +167,15 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
                 parsed["photo_url"] = photo_url
                 parsed["photo_caption"] = caption
 
+            # Extract flood threshold values
+            flood_categories = station_json.get('flood', {}).get('categories', {})
+            parsed["flood_major_stage"] = _to_float_safe(flood_categories.get('major', {}).get('stage'))
+            parsed["flood_major_flow"] = _to_float_safe(flood_categories.get('major', {}).get('flow'))
+            parsed["flood_moderate_stage"] = _to_float_safe(flood_categories.get('moderate', {}).get('stage'))
+            parsed["flood_moderate_flow"] = _to_float_safe(flood_categories.get('moderate', {}).get('flow'))
+            parsed["flood_minor_stage"] = _to_float_safe(flood_categories.get('minor', {}).get('stage'))
+            parsed["flood_minor_flow"] = _to_float_safe(flood_categories.get('minor', {}).get('flow'))
+
             parsed["_device"] = device
             parsed["_raw"] = station_json
 
