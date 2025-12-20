@@ -1,17 +1,51 @@
 """Config flow for NWPS Water integration."""
 from __future__ import annotations
 
+import asyncio
+import logging
+
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
     DOMAIN, 
     CONF_STATION, 
     CONF_PARAMETERS, 
     AVAILABLE_PARAMETERS, 
-    DEFAULT_SCAN_INTERVAL
+    DEFAULT_SCAN_INTERVAL,
+    NWPS_BASE
 )
+
+_LOGGER = logging.getLogger(__name__)
+
+
+async def _validate_station_id(hass, station_id: str) -> dict[str, str] | None:
+    """Validate the station ID by making a test API call.
+    
+    Returns None if valid, or a dict with error key if invalid.
+    """
+    session = async_get_clientsession(hass)
+    url = f"{NWPS_BASE}/{station_id}"
+    
+    try:
+        async with asyncio.timeout(10):
+            async with session.get(url) as resp:
+                if resp.status == 404:
+                    return {"base": "invalid_station"}
+                elif resp.status != 200:
+                    _LOGGER.error("NWPS API returned status %s for station %s", resp.status, station_id)
+                    return {"base": "cannot_connect"}
+                # Station is valid
+                return None
+    except asyncio.TimeoutError:
+        _LOGGER.error("Timeout validating station ID %s", station_id)
+        return {"base": "timeout"}
+    except Exception as err:
+        _LOGGER.exception("Unexpected error validating station ID %s: %s", station_id, err)
+        return {"base": "unknown"}
+
 
 class NWPSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for NWPS Water."""
@@ -23,18 +57,26 @@ class NWPSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors = {}
 
         if user_input is not None:
-            # 1. Check for duplicates
-            await self.async_set_unique_id(user_input[CONF_STATION])
-            self._abort_if_unique_id_configured()
+            # Capitalize station ID for consistency
+            station_id = user_input[CONF_STATION].upper()
+            
+            # Validate station ID with NWPS API
+            validation_error = await _validate_station_id(self.hass, station_id)
+            if validation_error:
+                errors.update(validation_error)
+            else:
+                # Check for duplicates
+                await self.async_set_unique_id(station_id)
+                self._abort_if_unique_id_configured()
 
-            return self.async_create_entry(
-                title=f"NWPS {user_input[CONF_STATION]}",
-                data={CONF_STATION: user_input[CONF_STATION]},
-                options={
-                    CONF_PARAMETERS: user_input.get(CONF_PARAMETERS, list(AVAILABLE_PARAMETERS.keys())),
-                    "scan_interval": user_input.get("scan_interval", DEFAULT_SCAN_INTERVAL),
-                },
-            )
+                return self.async_create_entry(
+                    title=f"NWPS {station_id}",
+                    data={CONF_STATION: station_id},
+                    options={
+                        CONF_PARAMETERS: user_input.get(CONF_PARAMETERS, list(AVAILABLE_PARAMETERS.keys())),
+                        "scan_interval": user_input.get("scan_interval", DEFAULT_SCAN_INTERVAL),
+                    },
+                )
 
         # 2. Define schema with parameter selection
         # Create a simple dict mapping parameter keys to their display names

@@ -9,6 +9,12 @@
           "scan_interval": "Update interval (seconds)"
         }
       }
+    },
+    "error": {
+      "invalid_station": "Invalid station ID. Please verify the ID on the NWPS API.",
+      "cannot_connect": "Cannot connect to NWPS API. Please check your connection and try again.",
+      "timeout": "Timeout connecting to NWPS API. Please try again.",
+      "unknown": "An unexpected error occurred. Please try again."
     }
   },
   "sensor": {
