@@ -92,7 +92,10 @@ class NWPSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(CONF_STATION): str,
                 vol.Optional(CONF_PARAMETERS, default=list(AVAILABLE_PARAMETERS.keys())): cv.multi_select(parameter_options),
-                vol.Optional("scan_interval", default=DEFAULT_SCAN_INTERVAL): int,
+                vol.Optional("scan_interval", default=DEFAULT_SCAN_INTERVAL): vol.All(
+                    vol.Coerce(int), 
+                    vol.Range(min=60, max=3600)
+                ),
             }
         )
 

@@ -6,6 +6,7 @@ from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySen
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, BINARY_SENSORS, CONF_STATION
@@ -13,7 +14,11 @@ from .coordinator import NWPSDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities) -> None:
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     """Set up binary sensors for a config entry."""
     # RECOVERY: Get the coordinator created in __init__.py
     coordinator = hass.data[DOMAIN][entry.entry_id]
@@ -40,14 +45,10 @@ class NWPSBinarySensor(CoordinatorEntity, BinarySensorEntity):
         self._attr_name = name
         self._attr_unique_id = f"nwps_{station_id}_{key}"
         
-        # Get station name from coordinator data, with fallback to station_id
-        station_name = coordinator.data.get("_device", {}).get("name") if coordinator.data else None
-        device_name = f"{station_id} - {station_name}" if station_name else station_id
-        
         # Link to the same device as the regular sensors
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, station_id)},
-            name=device_name,
+            name=coordinator.get_device_name(),
             manufacturer="NOAA NWPS",
         )
 

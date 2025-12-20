@@ -54,6 +54,7 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
         """Initialize coordinator."""
         self.hass = hass
         self.station_id = station_id
+        self.entry = entry
         
         # Pull parameters and interval directly from the entry options
         from .const import CONF_PARAMETERS, DEFAULT_SCAN_INTERVAL, AVAILABLE_PARAMETERS
@@ -75,21 +76,44 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
 
         self.raw: Dict[str, Any] = {}
 
+    def get_device_name(self) -> str:
+        """Get the device name for this station."""
+        if self.data:
+            station_name = self.data.get("_device", {}).get("name")
+            if station_name:
+                return f"{self.station_id} - {station_name}"
+        return self.station_id
+
     async def _async_update_data(self) -> dict:
         """Fetch and parse NWPS station JSON into a normalized dict."""
         try:
             url = f"{NWPS_BASE}/{self.station_id}"
             _LOGGER.debug("Fetching NWPS station URL: %s", url)
+            
             try:
-                async with self.session.get(url, timeout=30) as resp:
-                    if resp.status != 200:
-                        text = await resp.text()
-                        raise UpdateFailed(f"NWPS station endpoint returned HTTP {resp.status}: {text}")
-                    station_json = await resp.json()
-            except asyncio.TimeoutError:
-                raise UpdateFailed("Timeout while fetching NWPS station data")
+                async with asyncio.timeout(30):
+                    async with self.session.get(url) as resp:
+                        if resp.status == 404:
+                            raise UpdateFailed(
+                                f"Station {self.station_id} not found. "
+                                "Please verify the station ID is correct."
+                            )
+                        if resp.status != 200:
+                            text = await resp.text()
+                            raise UpdateFailed(
+                                f"NWPS API returned HTTP {resp.status}: {text[:200]}"
+                            )
+                        station_json = await resp.json()
+            except asyncio.TimeoutError as err:
+                raise UpdateFailed(
+                    f"Timeout while fetching NWPS data for station {self.station_id}"
+                ) from err
+            except UpdateFailed:
+                raise
             except Exception as exc:
-                raise UpdateFailed(f"Error fetching NWPS station data: {exc}") from exc
+                raise UpdateFailed(
+                    f"Error fetching NWPS station data: {exc}"
+                ) from exc
 
             self.raw = station_json
 

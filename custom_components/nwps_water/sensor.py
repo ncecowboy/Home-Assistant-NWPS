@@ -13,13 +13,18 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, AVAILABLE_PARAMETERS, CONF_PARAMETERS, CONF_STATION
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities) -> None:
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     """Set up sensors for a config entry."""
     # Retrieve the coordinator created in __init__.py
     coordinator = hass.data[DOMAIN][entry.entry_id]
@@ -87,14 +92,10 @@ class NWPSWaterSensor(CoordinatorEntity, SensorEntity):
         elif parameter in ("river_mile"):
             self._attr_icon = "mdi:map-marker-distance"
         
-        # Get station name from coordinator data, with fallback to station_id
-        station_name = coordinator.data.get("_device", {}).get("name") if coordinator.data else None
-        device_name = f"{station_id} - {station_name}" if station_name else station_id
-        
         # Set the device info so it groups correctly in the UI
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, station_id)},
-            name=device_name,
+            name=coordinator.get_device_name(),
             manufacturer="NOAA NWPS",
             model="NWPS Station",
             configuration_url="https://api.water.noaa.gov/nwps/v1/docs/",
