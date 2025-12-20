@@ -6,13 +6,19 @@ from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySen
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, BINARY_SENSORS, CONF_STATION
+from .coordinator import NWPSDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities) -> None:
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
     """Set up binary sensors for a config entry."""
     # RECOVERY: Get the coordinator created in __init__.py
     coordinator = hass.data[DOMAIN][entry.entry_id]
@@ -39,14 +45,10 @@ class NWPSBinarySensor(CoordinatorEntity, BinarySensorEntity):
         self._attr_name = name
         self._attr_unique_id = f"nwps_{station_id}_{key}"
         
-        # Get station name from coordinator data, with fallback to station_id
-        station_name = coordinator.data.get("_device", {}).get("name") if coordinator.data else None
-        device_name = f"{station_id} - {station_name}" if station_name else station_id
-        
         # Link to the same device as the regular sensors
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, station_id)},
-            name=device_name,
+            name=coordinator.get_device_name(),
             manufacturer="NOAA NWPS",
         )
 
@@ -72,8 +74,23 @@ class NWPSBinarySensor(CoordinatorEntity, BinarySensorEntity):
     def extra_state_attributes(self) -> dict:
         """Return details about the flood state."""
         data = self.coordinator.data or {}
-        return {
+        attrs = {
             "station_id": self._station_id,
             "flood_category": data.get(f"{self._key}_category"),
-            "flood_thresholds": data.get("flood_thresholds"),
         }
+        
+        # Add flood thresholds if available
+        if data.get("flood_minor_stage"):
+            attrs["flood_minor"] = data.get("flood_minor_stage")
+        if data.get("flood_moderate_stage"):
+            attrs["flood_moderate"] = data.get("flood_moderate_stage")
+        if data.get("flood_major_stage"):
+            attrs["flood_major"] = data.get("flood_major_stage")
+        
+        # Add current stage if available for context
+        if self._key == "observed_flood" and data.get("stage"):
+            attrs["current_stage"] = data.get("stage")
+        elif self._key == "forecast_flood" and data.get("forecast_stage"):
+            attrs["forecast_stage"] = data.get("forecast_stage")
+            
+        return attrs

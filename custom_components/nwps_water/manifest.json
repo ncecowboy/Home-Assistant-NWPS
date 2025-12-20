@@ -1,8 +1,8 @@
 {
-  "domain":  "nwps_water",
+  "domain": "nwps_water",
   "name": "National Water Prediction Service",
   "codeowners": ["@ncecowboy"],
-  "config_flow":  true,
+  "config_flow": true,
   "documentation": "https://github.com/ncecowboy/Home-Assistant-NWPS",
   "integration_type": "service",
   "iot_class": "cloud_poll",

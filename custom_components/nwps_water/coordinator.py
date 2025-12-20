@@ -53,10 +53,11 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
     def __init__(self, hass: HomeAssistant, station_id: str, entry: ConfigEntry):
         """Initialize coordinator."""
         self.hass = hass
-        self. station_id = station_id
+        self.station_id = station_id
+        self.entry = entry
         
         # Pull parameters and interval directly from the entry options
-        from . const import CONF_PARAMETERS, DEFAULT_SCAN_INTERVAL, AVAILABLE_PARAMETERS
+        from .const import CONF_PARAMETERS, DEFAULT_SCAN_INTERVAL, AVAILABLE_PARAMETERS
         
         self.parameters = entry.options.get(
             CONF_PARAMETERS, 
@@ -64,7 +65,7 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
         )
         update_interval = entry.options.get("scan_interval", DEFAULT_SCAN_INTERVAL)
 
-        self. session = async_get_clientsession(hass)
+        self.session = async_get_clientsession(hass)
 
         super().__init__(
             hass,
@@ -73,30 +74,53 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
             update_interval=timedelta(seconds=update_interval),
         )
 
-        self. raw:  Dict[str, Any] = {}
+        self.raw: Dict[str, Any] = {}
+
+    def get_device_name(self) -> str:
+        """Get the device name for this station."""
+        if self.data:
+            station_name = self.data.get("_device", {}).get("name")
+            if station_name:
+                return f"{self.station_id} - {station_name}"
+        return self.station_id
 
     async def _async_update_data(self) -> dict:
         """Fetch and parse NWPS station JSON into a normalized dict."""
         try:
             url = f"{NWPS_BASE}/{self.station_id}"
             _LOGGER.debug("Fetching NWPS station URL: %s", url)
+            
             try:
-                async with self.session.get(url, timeout=30) as resp:
-                    if resp.status != 200:
-                        text = await resp.text()
-                        raise UpdateFailed(f"NWPS station endpoint returned HTTP {resp.status}: {text}")
-                    station_json = await resp.json()
-            except asyncio.TimeoutError:
-                raise UpdateFailed("Timeout while fetching NWPS station data")
+                async with asyncio.timeout(30):
+                    async with self.session.get(url) as resp:
+                        if resp.status == 404:
+                            raise UpdateFailed(
+                                f"Station {self.station_id} not found. "
+                                "Please verify the station ID is correct."
+                            )
+                        if resp.status != 200:
+                            text = await resp.text()
+                            raise UpdateFailed(
+                                f"NWPS API returned HTTP {resp.status}: {text[:200]}"
+                            )
+                        station_json = await resp.json()
+            except asyncio.TimeoutError as err:
+                raise UpdateFailed(
+                    f"Timeout while fetching NWPS data for station {self.station_id}"
+                ) from err
+            except UpdateFailed:
+                raise
             except Exception as exc:
-                raise UpdateFailed(f"Error fetching NWPS station data: {exc}") from exc
+                raise UpdateFailed(
+                    f"Error fetching NWPS station data: {exc}"
+                ) from exc
 
             self.raw = station_json
 
-            parsed:  Dict[str, Any] = {}
+            parsed: Dict[str, Any] = {}
 
             # Device / station metadata
-            device:  Dict[str, Any] = {}
+            device: Dict[str, Any] = {}
             device["station_id"] = station_json.get("lid") or station_json.get("id")
             device["name"] = station_json.get("name") or station_json.get("description")
             device["latitude"] = station_json.get("latitude")
@@ -110,7 +134,7 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
             forecast = status.get("forecast") or {}
 
             # Observed primary/secondary
-            obs_primary = _to_float_safe(observed. get("primary"))
+            obs_primary = _to_float_safe(observed.get("primary"))
             obs_primary_unit = observed.get("primaryUnit")
             obs_secondary = _to_float_safe(observed.get("secondary"))
             obs_secondary_unit = observed.get("secondaryUnit")
@@ -119,7 +143,7 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
             fcst_primary = _to_float_safe(forecast.get("primary"))
             fcst_primary_unit = forecast.get("primaryUnit")
             fcst_secondary = _to_float_safe(forecast.get("secondary"))
-            fcst_secondary_unit = forecast. get("secondaryUnit")
+            fcst_secondary_unit = forecast.get("secondaryUnit")
 
             # Convert secondary (often flow) if unit uses kilo prefix
             obs_secondary_multiplier = _k_prefix_to_multiplier(obs_secondary_unit)
@@ -139,7 +163,7 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
             # Flood categories and thresholds
             parsed["observed_flood_category"] = observed.get("floodCategory") or station_json.get("ObservedFloodCategory")
             parsed["forecast_flood_category"] = forecast.get("floodCategory") or station_json.get("ForecastFloodCategory")
-            parsed["flood_thresholds"] = station_json. get("flood", {}).get("categories", {})
+            parsed["flood_thresholds"] = station_json.get("flood", {}).get("categories", {})
             
             # Parse individual flood threshold values
             flood_categories = station_json.get("flood", {}).get("categories", {})
@@ -157,11 +181,11 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
             images = station_json.get("images", {}) or {}
             hydrograph = images.get("hydrograph", {}) or {}
             parsed["hydrograph_image"] = hydrograph.get("default") or hydrograph.get("floodcat")
-            parsed["floodcat_image"] = hydrograph. get("floodcat")
+            parsed["floodcat_image"] = hydrograph.get("floodcat")
             # probabilistic images
             prob = images.get("probability", {}) or {}
             weekint = prob.get("weekint", {}) or {}
-            parsed["probability_stage_week"] = weekint. get("stage")
+            parsed["probability_stage_week"] = weekint.get("stage")
             parsed["probability_flow_week"] = weekint.get("flow")
             parsed["short_range_probability_image"] = images.get("probability", {}).get("shortrange") or images.get("probability", {}).get("shortrange")
 
