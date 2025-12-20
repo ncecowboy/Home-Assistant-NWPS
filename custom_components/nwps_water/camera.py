@@ -17,11 +17,11 @@ from .coordinator import NWPSDataCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 # Map camera types to their data keys in coordinator
-CAMERA_TYPES = {
-    "hydrograph": "hydrograph_image",
-    "floodcat": "floodcat_image",
-    "short_range_probability": "short_range_probability_image",
-    "station_photo": "photo_url",
+CAMERAS = {
+    "hydrograph": {"key": "hydrograph_image", "name": "Hydrograph"},
+    "floodcat": {"key": "floodcat_image", "name": "Flood Category"},
+    "short_range_probability": {"key": "short_range_probability_image", "name": "Short Range Probability"},
+    "station_photo": {"key": "photo_url", "name": "Station Photo"},
 }
 
 
@@ -29,12 +29,30 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities
 ) -> None:
     """Set up camera entities for a config entry."""
-    coordinator: NWPSDataCoordinator = hass.data[DOMAIN][entry.entry_id]
-    station_id = entry.data.get(CONF_STATION)
+    # Robustly retrieve station_id from entry.data
+    station_id = entry.data.get(CONF_STATION) or entry.data.get("station_id") or entry.data.get("station")
+    
+    # Get or create coordinator
+    coordinator = hass.data.setdefault(DOMAIN, {}).get(entry.entry_id)
+    if coordinator is None:
+        # Create coordinator if it doesn't exist
+        coordinator = NWPSDataCoordinator(hass, station_id, entry)
+        await coordinator.async_config_entry_first_refresh()
+        hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+    else:
+        # Ensure data is available
+        if not coordinator.data:
+            await coordinator.async_config_entry_first_refresh()
 
+    # Only create cameras where URL exists in coordinator data
     entities = []
-    for camera_id, data_key in CAMERA_TYPES.items():
-        entities.append(NWPSCamera(coordinator, station_id, camera_id, data_key))
+    for camera_id, info in CAMERAS.items():
+        url_key = info["key"]
+        url = coordinator.data.get(url_key)
+        if url:  # Only create camera if URL is present
+            entities.append(
+                NWPSCamera(coordinator, entry.entry_id, station_id, camera_id, url_key, info["name"])
+            )
 
     async_add_entities(entities)
 
@@ -47,9 +65,11 @@ class NWPSCamera(CoordinatorEntity, CameraEntity):
     def __init__(
         self,
         coordinator: NWPSDataCoordinator,
+        entry_id: str,
         station_id: str,
         camera_id: str,
         data_key: str,
+        camera_name: str,
     ):
         """Initialize the camera."""
         super().__init__(coordinator)
@@ -57,16 +77,7 @@ class NWPSCamera(CoordinatorEntity, CameraEntity):
         self._camera_id = camera_id
         self._data_key = data_key
 
-        # Create a friendly name for the camera
-        camera_name_map = {
-            "hydrograph": "Hydrograph",
-            "floodcat": "Flood Category",
-            "short_range_probability": "Short Range Probability",
-            "station_photo": "Station Photo",
-        }
-        camera_name = camera_name_map.get(camera_id, camera_id)
-
-        self._attr_name = f"{camera_name}"
+        self._attr_name = camera_name
         self._attr_unique_id = f"nwps_{station_id}_camera_{camera_id}"
 
         # Set device info to group with other entities

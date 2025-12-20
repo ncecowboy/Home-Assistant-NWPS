@@ -21,7 +21,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     coordinator = hass.data[DOMAIN][entry.entry_id]
     
     station_id = entry.data.get(CONF_STATION)
-    parameters = entry.options.get(CONF_PARAMETERS, list(AVAILABLE_PARAMETERS.keys()))
+    parameters = entry.options.get(CONF_PARAMETERS)
+    
+    # If no parameters configured, apply defaults and persist them
+    if not parameters:
+        parameters = list(AVAILABLE_PARAMETERS.keys())
+        hass.config_entries.async_update_entry(
+            entry, options={**entry.options, CONF_PARAMETERS: parameters}
+        )
 
     entities = [
         NWPSWaterSensor(coordinator, station_id, param)
