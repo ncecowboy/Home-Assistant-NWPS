@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
+import aiohttp
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.helpers import config_validation as cv
@@ -30,7 +31,7 @@ async def _validate_station_id(hass, station_id: str) -> dict[str, str] | None:
     url = f"{NWPS_BASE}/{station_id}"
     
     try:
-        async with session.get(url, timeout=10) as resp:
+        async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
             if resp.status == 404:
                 return {"base": "invalid_station"}
             elif resp.status != 200:
@@ -41,6 +42,9 @@ async def _validate_station_id(hass, station_id: str) -> dict[str, str] | None:
     except asyncio.TimeoutError:
         _LOGGER.error("Timeout validating station ID %s", station_id)
         return {"base": "timeout"}
+    except aiohttp.ClientError as err:
+        _LOGGER.error("Client error validating station ID %s: %s", station_id, err)
+        return {"base": "cannot_connect"}
     except Exception as err:
         _LOGGER.exception("Unexpected error validating station ID %s: %s", station_id, err)
         return {"base": "unknown"}
