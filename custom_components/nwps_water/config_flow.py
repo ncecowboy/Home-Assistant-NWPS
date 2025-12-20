@@ -39,7 +39,7 @@ async def _validate_station_id(hass, station_id: str) -> dict[str, str] | None:
                 return {"base": "cannot_connect"}
             # Station is valid
             return None
-    except asyncio.TimeoutError:
+    except (asyncio.TimeoutError, aiohttp.ServerTimeoutError):
         _LOGGER.error("Timeout validating station ID %s", station_id)
         return {"base": "timeout"}
     except aiohttp.ClientError as err:
