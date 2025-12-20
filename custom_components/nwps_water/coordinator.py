@@ -53,7 +53,7 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
     def __init__(self, hass: HomeAssistant, station_id: str, entry: ConfigEntry):
         """Initialize coordinator."""
         self.hass = hass
-        self.station_id = station_id
+        self. station_id = station_id
         
         # Pull parameters and interval directly from the entry options
         from . const import CONF_PARAMETERS, DEFAULT_SCAN_INTERVAL, AVAILABLE_PARAMETERS
@@ -64,7 +64,7 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
         )
         update_interval = entry.options.get("scan_interval", DEFAULT_SCAN_INTERVAL)
 
-        self.session = async_get_clientsession(hass)
+        self. session = async_get_clientsession(hass)
 
         super().__init__(
             hass,
@@ -73,7 +73,7 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
             update_interval=timedelta(seconds=update_interval),
         )
 
-        self.raw: Dict[str, Any] = {}
+        self. raw:  Dict[str, Any] = {}
 
     async def _async_update_data(self) -> dict:
         """Fetch and parse NWPS station JSON into a normalized dict."""
@@ -140,19 +140,6 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
             parsed["observed_flood_category"] = observed.get("floodCategory") or station_json.get("ObservedFloodCategory")
             parsed["forecast_flood_category"] = forecast.get("floodCategory") or station_json.get("ForecastFloodCategory")
             parsed["flood_thresholds"] = station_json. get("flood", {}).get("categories", {})
-            
-            # Parse individual flood threshold values
-            flood_categories = station_json.get("flood", {}).get("categories", {})
-            major = flood_categories.get("major", {})
-            moderate = flood_categories.get("moderate", {})
-            minor = flood_categories.get("minor", {})
-            
-            parsed["flood_major_stage"] = _to_float_safe(major.get("stage"))
-            parsed["flood_major_flow"] = _to_float_safe(major.get("flow"))
-            parsed["flood_moderate_stage"] = _to_float_safe(moderate.get("stage"))
-            parsed["flood_moderate_flow"] = _to_float_safe(moderate.get("flow"))
-            parsed["flood_minor_stage"] = _to_float_safe(minor.get("stage"))
-            parsed["flood_minor_flow"] = _to_float_safe(minor.get("flow"))
 
             # Images (hydrograph, floodcat, probabilistic, short range)
             images = station_json.get("images", {}) or {}
