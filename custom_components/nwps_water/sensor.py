@@ -49,10 +49,14 @@ class NWPSWaterSensor(CoordinatorEntity, SensorEntity):
         self._attr_unique_id = f"nwps_{station_id}_{parameter}"
         self._attr_native_unit_of_measurement = info.get("unit")
         
+        # Get station name from coordinator data, with fallback to station_id
+        station_name = coordinator.data.get("_device", {}).get("name") if coordinator.data else None
+        device_name = f"{station_id} - {station_name}" if station_name else station_id
+        
         # Set the device info so it groups correctly in the UI
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, station_id)},
-            name=f"NWPS {station_id}",
+            name=device_name,
             manufacturer="NOAA NWPS",
             model="NWPS Station",
             configuration_url="https://api.water.noaa.gov/nwps/v1/docs/",
