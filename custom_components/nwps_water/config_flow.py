@@ -101,3 +101,50 @@ class NWPSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=schema, 
             errors=errors
         )
+
+    @staticmethod
+    def async_get_options_flow(config_entry):
+        """Get the options flow for this handler."""
+        return NWPSOptionsFlow(config_entry)
+
+
+class NWPSOptionsFlow(config_entries.OptionsFlow):
+    """Handle options flow for NWPS Water."""
+
+    def __init__(self, config_entry):
+        """Initialize options flow."""
+        self.config_entry = config_entry
+
+    async def async_step_init(self, user_input=None):
+        """Manage the options."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        # Create a simple dict mapping parameter keys to their display names
+        parameter_options = {
+            param_key: param_info.get("name", param_key)
+            for param_key, param_info in AVAILABLE_PARAMETERS.items()
+        }
+
+        # Get current values from options, or fall back to defaults
+        current_parameters = self.config_entry.options.get(
+            CONF_PARAMETERS, list(AVAILABLE_PARAMETERS.keys())
+        )
+        current_interval = self.config_entry.options.get(
+            "scan_interval", DEFAULT_SCAN_INTERVAL
+        )
+
+        schema = vol.Schema(
+            {
+                vol.Optional(
+                    CONF_PARAMETERS, 
+                    default=current_parameters
+                ): cv.multi_select(parameter_options),
+                vol.Optional(
+                    "scan_interval", 
+                    default=current_interval
+                ): vol.All(vol.Coerce(int), vol.Range(min=60, max=3600)),
+            }
+        )
+
+        return self.async_show_form(step_id="init", data_schema=schema)

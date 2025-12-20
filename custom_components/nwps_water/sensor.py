@@ -5,10 +5,14 @@ from .coordinator import NWPSDataCoordinator
 import logging
 from typing import Any
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import (
+    SensorEntity,
+    SensorDeviceClass,
+    SensorStateClass,
+)
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, AVAILABLE_PARAMETERS, CONF_PARAMETERS, CONF_STATION
@@ -48,6 +52,40 @@ class NWPSWaterSensor(CoordinatorEntity, SensorEntity):
         self._attr_name = info.get('name', parameter)
         self._attr_unique_id = f"nwps_{station_id}_{parameter}"
         self._attr_native_unit_of_measurement = info.get("unit")
+        
+        # Set state class for numeric sensors that measure values
+        if parameter in ("stage", "flow", "forecast_stage", "forecast_flow", 
+                         "flood_minor_stage", "flood_moderate_stage", "flood_major_stage",
+                         "elevation", "river_mile"):
+            self._attr_state_class = SensorStateClass.MEASUREMENT
+        
+        # Set entity category for diagnostic/metadata sensors
+        if parameter in ("latitude", "longitude", "elevation", "river_mile",
+                         "flood_minor_stage", "flood_moderate_stage", "flood_major_stage"):
+            self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        
+        # Set device class where applicable
+        if parameter in ("latitude", "longitude"):
+            # No specific device class for coordinates, but they're diagnostic
+            pass
+        elif parameter in ("elevation"):
+            self._attr_device_class = SensorDeviceClass.DISTANCE
+        
+        # Set icon based on parameter type
+        if parameter in ("stage", "forecast_stage"):
+            self._attr_icon = "mdi:waves-arrow-up"
+        elif parameter in ("flow", "forecast_flow"):
+            self._attr_icon = "mdi:waves"
+        elif parameter in ("observed_flood_category", "forecast_flood_category"):
+            self._attr_icon = "mdi:alert-circle"
+        elif parameter in ("flood_minor_stage", "flood_moderate_stage", "flood_major_stage"):
+            self._attr_icon = "mdi:alert"
+        elif parameter in ("latitude", "longitude"):
+            self._attr_icon = "mdi:map-marker"
+        elif parameter in ("elevation"):
+            self._attr_icon = "mdi:elevation-rise"
+        elif parameter in ("river_mile"):
+            self._attr_icon = "mdi:map-marker-distance"
         
         # Get station name from coordinator data, with fallback to station_id
         station_name = coordinator.data.get("_device", {}).get("name") if coordinator.data else None

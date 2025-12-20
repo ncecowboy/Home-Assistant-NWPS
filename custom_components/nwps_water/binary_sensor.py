@@ -9,6 +9,7 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, BINARY_SENSORS, CONF_STATION
+from .coordinator import NWPSDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
