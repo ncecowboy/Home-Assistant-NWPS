@@ -7,7 +7,6 @@ Fetch water monitoring data from NOAA NWPS (National Water Prediction Service) a
 - **Real-time Water Data**: Stage, flow, and forecast data from NOAA NWPS
 - **Configurable Sensors**: Choose which parameters to monitor (Stage, Flow, Forecast Stage/Flow, etc.)
 - **Flood Alerts**: Binary sensors for observed and forecast flood conditions
-- **Hydrograph Images**:  Visualize water data trends with included hydrograph images
 - **Multi-station Support**: Monitor multiple water stations simultaneously
 - **Device Info**: Includes station coordinates and metadata for map integration
 
@@ -51,9 +50,8 @@ After installation, the integration will create sensors based on your selected p
 - **Forecast Flow** (cfs) - Predicted water flow
 - **Observed Flood Category** - Current flood status (None/Action/Minor/Moderate/Major)
 - **Forecast Flood Category** - Predicted flood status
-- **Hydrograph Image** - Chart showing stage/flow trends
-- **Flood Category Image** - Visual flood level indicators
-- **Probabilistic Images** - Exceedance probability maps
+- **Flood Thresholds** - Minor, Moderate, and Major flood stage levels
+- **Station Metadata** - Latitude, Longitude, Elevation, River Mile
 
 ### Binary Sensors
 
@@ -83,14 +81,6 @@ automation:
         data:
           message: "Flood expected at COCO3 station!"
           title: "NWPS Alert"
-```
-
-### Display Hydrograph in Lovelace
-
-```yaml
-type: picture
-image_entity: sensor.nwps_coco3_hydrograph_image
-title: COCO3 Hydrograph
 ```
 
 ## Troubleshooting

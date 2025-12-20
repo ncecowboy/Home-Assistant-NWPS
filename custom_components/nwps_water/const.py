@@ -21,9 +21,6 @@ AVAILABLE_PARAMETERS = {
     "longitude": {"name": "Longitude", "unit": "°"},
     "elevation": {"name": "Elevation", "unit": "ft"},
     "river_mile": {"name": "River Mile", "unit": "mi"},
-    "probability_stage_week": {"name": "Probability Stage (weekint)", "unit": None},
-    "probability_flow_week": {"name": "Probability Flow (weekint)", "unit": None},
-    "photo_url": {"name": "Station Photo", "unit": None},
 }
 
 # Binary sensor keys
