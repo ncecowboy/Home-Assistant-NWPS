@@ -53,7 +53,7 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
     def __init__(self, hass: HomeAssistant, station_id: str, entry: ConfigEntry):
         """Initialize coordinator."""
         self.hass = hass
-        self. station_id = station_id
+        self.station_id = station_id
         
         # Pull parameters and interval directly from the entry options
         from . const import CONF_PARAMETERS, DEFAULT_SCAN_INTERVAL, AVAILABLE_PARAMETERS
@@ -64,7 +64,7 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
         )
         update_interval = entry.options.get("scan_interval", DEFAULT_SCAN_INTERVAL)
 
-        self. session = async_get_clientsession(hass)
+        self.session = async_get_clientsession(hass)
 
         super().__init__(
             hass,
@@ -73,7 +73,7 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
             update_interval=timedelta(seconds=update_interval),
         )
 
-        self. raw:  Dict[str, Any] = {}
+        self.raw: Dict[str, Any] = {}
 
     async def _async_update_data(self) -> dict:
         """Fetch and parse NWPS station JSON into a normalized dict."""
