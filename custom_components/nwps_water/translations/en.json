@@ -3,10 +3,16 @@
     "step": {
       "user": {
         "title": "Configure NWPS Water",
+        "description": "Set up the National Water Prediction Service integration. Enter a valid NWPS station ID (e.g., COCO3).",
         "data": {
           "station_id": "Station ID",
           "parameters": "Parameters to expose",
           "scan_interval": "Update interval (seconds)"
+        },
+        "data_description": {
+          "station_id": "NWPS station identifier from api.water.noaa.gov",
+          "parameters": "Select which data parameters to monitor",
+          "scan_interval": "How often to poll the NWPS API (60-3600 seconds)"
         }
       }
     },
@@ -15,25 +21,25 @@
       "cannot_connect": "Cannot connect to NWPS API. Please check your connection and try again.",
       "timeout": "Timeout connecting to NWPS API. Please try again.",
       "unknown": "An unexpected error occurred. Please try again."
+    },
+    "abort": {
+      "already_configured": "This station is already configured."
     }
   },
-  "sensor": {
-    "state": {
-      "stage": "Stage",
-      "flow": "Flow",
-      "forecast_stage": "Forecast Stage",
-      "forecast_flow": "Forecast Flow"
-    }
-  },
-  "binary_sensor": {
-    "state": {
-      "observed_flood": "Observed Flood",
-      "forecast_flood": "Forecast Flood"
-    }
-  },
-  "system_health": {
-    "info": {
-      "version": "Version"
+  "options": {
+    "step": {
+      "init": {
+        "title": "NWPS Water Options",
+        "description": "Configure which parameters to monitor and update frequency.",
+        "data": {
+          "parameters": "Parameters to expose",
+          "scan_interval": "Update interval (seconds)"
+        },
+        "data_description": {
+          "parameters": "Select which data parameters to monitor",
+          "scan_interval": "How often to poll the NWPS API (60-3600 seconds)"
+        }
+      }
     }
   }
 }

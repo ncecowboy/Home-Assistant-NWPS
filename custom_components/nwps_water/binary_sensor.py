@@ -74,8 +74,23 @@ class NWPSBinarySensor(CoordinatorEntity, BinarySensorEntity):
     def extra_state_attributes(self) -> dict:
         """Return details about the flood state."""
         data = self.coordinator.data or {}
-        return {
+        attrs = {
             "station_id": self._station_id,
             "flood_category": data.get(f"{self._key}_category"),
-            "flood_thresholds": data.get("flood_thresholds"),
         }
+        
+        # Add flood thresholds if available
+        if data.get("flood_minor_stage"):
+            attrs["flood_minor"] = data.get("flood_minor_stage")
+        if data.get("flood_moderate_stage"):
+            attrs["flood_moderate"] = data.get("flood_moderate_stage")
+        if data.get("flood_major_stage"):
+            attrs["flood_major"] = data.get("flood_major_stage")
+        
+        # Add current stage if available for context
+        if self._key == "observed_flood" and data.get("stage"):
+            attrs["current_stage"] = data.get("stage")
+        elif self._key == "forecast_flood" and data.get("forecast_stage"):
+            attrs["forecast_stage"] = data.get("forecast_stage")
+            
+        return attrs

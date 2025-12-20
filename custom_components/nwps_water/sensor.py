@@ -112,9 +112,20 @@ class NWPSWaterSensor(CoordinatorEntity, SensorEntity):
     def extra_state_attributes(self) -> dict:
         """Return entity specific state attributes."""
         data = self.coordinator.data or {}
-        return {
+        attrs = {
             "station_id": self._station_id,
             "parameter": self._parameter,
-            "raw_payload": data.get("_raw"),
             "attribution": "Data provided by NOAA NWPS",
         }
+        
+        # Add relevant metadata based on parameter type
+        if self._parameter in ("stage", "forecast_stage"):
+            # Include flood thresholds for stage readings
+            if data.get("flood_minor_stage"):
+                attrs["flood_minor"] = data.get("flood_minor_stage")
+            if data.get("flood_moderate_stage"):
+                attrs["flood_moderate"] = data.get("flood_moderate_stage")
+            if data.get("flood_major_stage"):
+                attrs["flood_major"] = data.get("flood_major_stage")
+        
+        return attrs
