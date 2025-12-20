@@ -19,15 +19,12 @@ _LOGGER = logging.getLogger(__name__)
 IMAGE_PARAMETERS = {
     "hydrograph_image": {
         "name": "Hydrograph Image",
-        "key": "hydrograph_image",
     },
     "floodcat_image": {
         "name": "Flood Category Image",
-        "key": "floodcat_image",
     },
     "short_range_probability_image": {
         "name": "Short Range Probability Image",
-        "key": "short_range_probability_image",
     },
 }
 
@@ -65,7 +62,7 @@ class NWPSImageEntity(CoordinatorEntity, ImageEntity):
         self._parameter = parameter
         self._attr_name = parameter_info.get("name", parameter)
         self._attr_unique_id = f"nwps_{station_id}_{parameter}"
-        
+
         # Set the device info so it groups correctly in the UI
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, station_id)},
