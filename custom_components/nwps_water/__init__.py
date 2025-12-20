@@ -13,7 +13,7 @@ from .coordinator import NWPSDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = ["sensor", "binary_sensor", "image"]
+PLATFORMS = ["sensor", "binary_sensor"]
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the integration (no YAML)."""
