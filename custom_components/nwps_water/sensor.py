@@ -73,7 +73,7 @@ class NWPSWaterSensor(CoordinatorEntity, SensorEntity):
         if parameter in ("latitude", "longitude"):
             # No specific device class for coordinates, but they're diagnostic
             pass
-        elif parameter in ("elevation"):
+        elif parameter == "elevation":
             self._attr_device_class = SensorDeviceClass.DISTANCE
         
         # Set icon based on parameter type
