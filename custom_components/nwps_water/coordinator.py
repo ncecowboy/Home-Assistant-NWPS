@@ -140,6 +140,18 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
             parsed["observed_flood_category"] = observed.get("floodCategory") or station_json.get("ObservedFloodCategory")
             parsed["forecast_flood_category"] = forecast.get("floodCategory") or station_json.get("ForecastFloodCategory")
             parsed["flood_thresholds"] = station_json. get("flood", {}).get("categories", {})
+            
+            # Parse individual flood threshold values
+            flood_categories = station_json.get("flood", {}).get("categories", {})
+            parsed["flood_minor_stage"] = _to_float_safe(flood_categories.get("minor", {}).get("stage"))
+            parsed["flood_moderate_stage"] = _to_float_safe(flood_categories.get("moderate", {}).get("stage"))
+            parsed["flood_major_stage"] = _to_float_safe(flood_categories.get("major", {}).get("stage"))
+            
+            # GPS coordinates and other metadata
+            parsed["latitude"] = _to_float_safe(station_json.get("latitude"))
+            parsed["longitude"] = _to_float_safe(station_json.get("longitude"))
+            parsed["elevation"] = _to_float_safe(station_json.get("elevation"))
+            parsed["river_mile"] = _to_float_safe(station_json.get("riverMile"))
 
             # Images (hydrograph, floodcat, probabilistic, short range)
             images = station_json.get("images", {}) or {}
