@@ -30,15 +30,14 @@ async def _validate_station_id(hass, station_id: str) -> dict[str, str] | None:
     url = f"{NWPS_BASE}/{station_id}"
     
     try:
-        async with asyncio.timeout(10):
-            async with session.get(url) as resp:
-                if resp.status == 404:
-                    return {"base": "invalid_station"}
-                elif resp.status != 200:
-                    _LOGGER.error("NWPS API returned status %s for station %s", resp.status, station_id)
-                    return {"base": "cannot_connect"}
-                # Station is valid
-                return None
+        async with session.get(url, timeout=10) as resp:
+            if resp.status == 404:
+                return {"base": "invalid_station"}
+            elif resp.status != 200:
+                _LOGGER.error("NWPS API returned status %s for station %s", resp.status, station_id)
+                return {"base": "cannot_connect"}
+            # Station is valid
+            return None
     except asyncio.TimeoutError:
         _LOGGER.error("Timeout validating station ID %s", station_id)
         return {"base": "timeout"}
