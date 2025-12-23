@@ -81,6 +81,10 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
 
     def get_device_name(self) -> str:
         """Get the device name for this station."""
+        if self.data:
+            station_name = self.data.get("_device", {}).get("name")
+            if station_name:
+                return f"{self.station_id} - {station_name}"
         return self.station_id
 
     async def _async_update_data(self) -> dict:
