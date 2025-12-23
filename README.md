@@ -90,6 +90,7 @@ automation:
 - Check that your station ID is correct
 - Verify the station is active on the [NWPS API](https://api.water.noaa.gov/nwps/v1/docs/)
 - Check Home Assistant logs for API errors
+- **Note**: The integration retains sensor data for up to 1 hour during temporary API unavailability. Sensors will only become unavailable if the API remains inaccessible for more than 1 hour.
 
 ### Missing sensor values
 
@@ -123,4 +124,5 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Version History
 
+- **1.4.0** - Simplified entity IDs to use station ID format (e.g., `sensor.coco3_stage`); added 1-hour data retention during temporary API unavailability
 - **1.0.0** - Initial release with full NWPS integration support

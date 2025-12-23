@@ -3,13 +3,14 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .const import NWPS_BASE
 
@@ -75,6 +76,8 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
         )
 
         self.raw: Dict[str, Any] = {}
+        self._last_successful_update: Optional[datetime] = None
+        self._cached_data: Optional[Dict[str, Any]] = None
 
     def get_device_name(self) -> str:
         """Get the device name for this station."""
@@ -209,9 +212,47 @@ class NWPSDataCoordinator(DataUpdateCoordinator):
             _LOGGER.debug("Parsed NWPS data keys: %s", list(parsed.keys()))
             _LOGGER.debug("Parsed flow value: %s", parsed.get("flow"))
 
+            # Update successful fetch tracking
+            self._last_successful_update = dt_util.utcnow()
+            self._cached_data = parsed
+
             return parsed
 
-        except UpdateFailed:
+        except UpdateFailed as err:
+            # Check if we have cached data within the 1-hour retention window
+            if self._cached_data is not None and self._last_successful_update is not None:
+                time_since_last_update = dt_util.utcnow() - self._last_successful_update
+                if time_since_last_update < timedelta(hours=1):
+                    _LOGGER.warning(
+                        "NWPS API temporarily unavailable for station %s, using cached data from %s ago: %s",
+                        self.station_id,
+                        time_since_last_update,
+                        err
+                    )
+                    return self._cached_data
+                else:
+                    _LOGGER.error(
+                        "NWPS API unavailable for station %s for more than 1 hour, marking sensors unavailable: %s",
+                        self.station_id,
+                        err
+                    )
             raise
         except Exception as err: 
+            # Check if we have cached data within the 1-hour retention window
+            if self._cached_data is not None and self._last_successful_update is not None:
+                time_since_last_update = dt_util.utcnow() - self._last_successful_update
+                if time_since_last_update < timedelta(hours=1):
+                    _LOGGER.warning(
+                        "Unexpected error for station %s, using cached data from %s ago: %s",
+                        self.station_id,
+                        time_since_last_update,
+                        err
+                    )
+                    return self._cached_data
+                else:
+                    _LOGGER.error(
+                        "Error persisted for station %s for more than 1 hour, marking sensors unavailable: %s",
+                        self.station_id,
+                        err
+                    )
             raise UpdateFailed(f"Unexpected error parsing NWPS data: {err}") from err
