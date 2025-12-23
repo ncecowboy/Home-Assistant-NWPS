@@ -43,8 +43,8 @@ async def async_setup_entry(
 class NWPSWaterSensor(CoordinatorEntity, SensorEntity):
     """Representation of a NWPS parameter as a sensor."""
 
-    # This tells HA to use the Device Name + the translated Entity Name
-    _attr_has_entity_name = True
+    # Entity naming is handled manually to create concise entity IDs
+    _attr_has_entity_name = False
 
     def __init__(self, coordinator: NWPSDataCoordinator, station_id: str, parameter: str):
         super().__init__(coordinator)
@@ -53,8 +53,10 @@ class NWPSWaterSensor(CoordinatorEntity, SensorEntity):
         
         info = AVAILABLE_PARAMETERS.get(parameter, {})
         
-        # The name now only describes the sensor, not the station
-        self._attr_name = info.get('name', parameter)
+        # Set entity name to be station_id + parameter name for concise entity IDs
+        # e.g., "COCO3 Stage" which creates entity_id "sensor.coco3_stage"
+        param_name = info.get('name', parameter)
+        self._attr_name = f"{station_id} {param_name}"
         self._attr_unique_id = f"nwps_{station_id}_{parameter}"
         self._attr_native_unit_of_measurement = info.get("unit")
         

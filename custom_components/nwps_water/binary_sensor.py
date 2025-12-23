@@ -34,7 +34,8 @@ async def async_setup_entry(
 class NWPSBinarySensor(CoordinatorEntity, BinarySensorEntity):
     """Binary sensor for NWPS flood condition."""
 
-    _attr_has_entity_name = True
+    # Entity naming is handled manually to create concise entity IDs
+    _attr_has_entity_name = False
     # 'problem' makes the sensor turn Red in the UI when 'on'
     _attr_device_class = BinarySensorDeviceClass.PROBLEM 
 
@@ -42,7 +43,9 @@ class NWPSBinarySensor(CoordinatorEntity, BinarySensorEntity):
         super().__init__(coordinator)
         self._station_id = station_id
         self._key = key
-        self._attr_name = name
+        # Set entity name to be station_id + name for concise entity IDs
+        # e.g., "COCO3 Observed Flood Active" creates entity_id "binary_sensor.coco3_observed_flood_active"
+        self._attr_name = f"{station_id} {name}"
         self._attr_unique_id = f"nwps_{station_id}_{key}"
         
         # Link to the same device as the regular sensors
