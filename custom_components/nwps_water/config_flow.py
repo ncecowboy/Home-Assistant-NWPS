@@ -1,7 +1,6 @@
 """Config flow for NWPS Water integration."""
 from __future__ import annotations
 
-import asyncio
 import logging
 
 import aiohttp
@@ -16,7 +15,8 @@ from .const import (
     CONF_PARAMETERS, 
     AVAILABLE_PARAMETERS, 
     DEFAULT_SCAN_INTERVAL,
-    NWPS_BASE
+    CONF_SCAN_INTERVAL,
+    NWPS_BASE,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ async def _validate_station_id(hass, station_id: str) -> dict[str, str] | None:
                 return {"base": "cannot_connect"}
             # Station is valid
             return None
-    except (asyncio.TimeoutError, aiohttp.ServerTimeoutError):
+    except TimeoutError:
         _LOGGER.error("Timeout validating station ID %s", station_id)
         return {"base": "timeout"}
     except aiohttp.ClientError as err:
@@ -77,7 +77,7 @@ class NWPSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     data={CONF_STATION: station_id},
                     options={
                         CONF_PARAMETERS: user_input.get(CONF_PARAMETERS, list(AVAILABLE_PARAMETERS.keys())),
-                        "scan_interval": user_input.get("scan_interval", DEFAULT_SCAN_INTERVAL),
+                        CONF_SCAN_INTERVAL: user_input.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
                     },
                 )
 
@@ -92,7 +92,7 @@ class NWPSConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(CONF_STATION): str,
                 vol.Optional(CONF_PARAMETERS, default=list(AVAILABLE_PARAMETERS.keys())): cv.multi_select(parameter_options),
-                vol.Optional("scan_interval", default=DEFAULT_SCAN_INTERVAL): vol.All(
+                vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): vol.All(
                     vol.Coerce(int), 
                     vol.Range(min=60, max=3600)
                 ),
@@ -130,7 +130,7 @@ class NWPSOptionsFlow(config_entries.OptionsFlow):
             CONF_PARAMETERS, list(AVAILABLE_PARAMETERS.keys())
         )
         current_interval = self.config_entry.options.get(
-            "scan_interval", DEFAULT_SCAN_INTERVAL
+            CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
         )
 
         schema = vol.Schema(
@@ -140,7 +140,7 @@ class NWPSOptionsFlow(config_entries.OptionsFlow):
                     default=current_parameters
                 ): cv.multi_select(parameter_options),
                 vol.Optional(
-                    "scan_interval", 
+                    CONF_SCAN_INTERVAL, 
                     default=current_interval
                 ): vol.All(vol.Coerce(int), vol.Range(min=60, max=3600)),
             }

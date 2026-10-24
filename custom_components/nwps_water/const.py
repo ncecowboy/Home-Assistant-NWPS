@@ -5,6 +5,7 @@ DEFAULT_NAME = "NWPS Water"
 DEFAULT_SCAN_INTERVAL = 300  # seconds (5 minutes)
 CONF_STATION = "station_id"
 CONF_PARAMETERS = "parameters"
+CONF_SCAN_INTERVAL = "scan_interval"
 
 # Parameter keys exposed as sensors. Units are typical / normalized to more common units.
 AVAILABLE_PARAMETERS = {

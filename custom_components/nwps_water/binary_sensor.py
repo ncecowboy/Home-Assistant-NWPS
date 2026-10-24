@@ -3,12 +3,12 @@ from __future__ import annotations
 
 import logging
 from homeassistant.components.binary_sensor import BinarySensorEntity, BinarySensorDeviceClass
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from . import NWPSConfigEntry
 from .const import DOMAIN, BINARY_SENSORS, CONF_STATION
 from .coordinator import NWPSDataCoordinator
 
@@ -16,12 +16,11 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: NWPSConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up binary sensors for a config entry."""
-    # RECOVERY: Get the coordinator created in __init__.py
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     station_id = entry.data.get(CONF_STATION)
 
     entities = []
