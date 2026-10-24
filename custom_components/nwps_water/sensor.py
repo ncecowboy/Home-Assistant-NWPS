@@ -1,7 +1,5 @@
 """Sensors for NWPS Water integration."""
 from __future__ import annotations
-from .coordinator import NWPSDataCoordinator
-
 import logging
 from typing import Any
 
@@ -10,25 +8,26 @@ from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorStateClass,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.const import EntityCategory
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from . import NWPSConfigEntry
 from .const import DOMAIN, AVAILABLE_PARAMETERS, CONF_PARAMETERS, CONF_STATION
+from .coordinator import NWPSDataCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: NWPSConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up sensors for a config entry."""
     # Retrieve the coordinator created in __init__.py
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
     
     station_id = entry.data.get(CONF_STATION)
     parameters = entry.options.get(CONF_PARAMETERS, list(AVAILABLE_PARAMETERS.keys()))
@@ -90,9 +89,9 @@ class NWPSWaterSensor(CoordinatorEntity, SensorEntity):
             self._attr_icon = "mdi:alert"
         elif parameter in ("latitude", "longitude"):
             self._attr_icon = "mdi:map-marker"
-        elif parameter in ("elevation"):
+        elif parameter == "elevation":
             self._attr_icon = "mdi:elevation-rise"
-        elif parameter in ("river_mile"):
+        elif parameter == "river_mile":
             self._attr_icon = "mdi:map-marker-distance"
         
         # Set the device info so it groups correctly in the UI

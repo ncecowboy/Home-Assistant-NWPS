@@ -124,5 +124,6 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Version History
 
+- **1.5.1** - Modernized to `entry.runtime_data`, refactored coordinator parsing, added tests; requires Home Assistant 2024.12+
 - **1.4.0** - Simplified entity IDs to use station ID format (e.g., `sensor.coco3_stage`); added 1-hour data retention during temporary API unavailability
 - **1.0.0** - Initial release with full NWPS integration support
